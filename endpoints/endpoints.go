@@ -18,13 +18,13 @@ var UpdateTokens = func(db *mongo.Client) func(w http.ResponseWriter, r *http.Re
 	}
 }
 
-var DeleteToken = func(db *mongo.Client) func(w http.ResponseWriter, r *http.Request) {
+var DeleteOneToken = func(db *mongo.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res = helpers.SetResponseHeaders(res)
 	}
 }
 
-var DeleteTokens = func(db *mongo.Client) func(w http.ResponseWriter, r *http.Request) {
+var DeleteAllTokens = func(db *mongo.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res = helpers.SetResponseHeaders(res)
 	}

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"ApiAuthenticationService/helpers"
 	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -8,7 +9,7 @@ import (
 )
 
 func MongoConnection() *mongo.Client {
-	clientOptions := options.Client().ApplyURI("mongodb://127.0.0.1:27017")
+	clientOptions := options.Client().ApplyURI(helpers.MongodbUrl)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 
 	if err != nil {
@@ -22,7 +23,24 @@ func MongoConnection() *mongo.Client {
 	}
 
 	log.Println("Connected to MongoDB!")
+
 	return client
+}
+
+func (userTokens UserTokens) CreateTokensForUser(db *mongo.Client) {
+
+}
+
+func (userTokens UserTokens) UpdateTokensForUser(db *mongo.Client) {
+
+}
+
+func (userTokens UserTokens) DeleteOneTokenForUser(db *mongo.Client) {
+
+}
+
+func (userTokens UserTokens) DeleteAllTokensForUser(db *mongo.Client) {
+
 }
 
 func MongoCloseConnection(client *mongo.Client) {
@@ -31,5 +49,6 @@ func MongoCloseConnection(client *mongo.Client) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	log.Println("Connection to MongoDB closed!")
 }

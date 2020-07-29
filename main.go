@@ -3,6 +3,7 @@ package main
 import (
 	"ApiAuthenticationService/database"
 	"ApiAuthenticationService/endpoints"
+	"ApiAuthenticationService/helpers"
 	"context"
 	"github.com/gorilla/mux"
 	"log"
@@ -20,10 +21,10 @@ func main() {
 
 	router.HandleFunc("/api/create/tokens", endpoints.CreateTokens(db)).Methods("POST")
 	router.HandleFunc("/api/update/tokens", endpoints.UpdateTokens(db)).Methods("PUT")
-	router.HandleFunc("/api/delete/token", endpoints.DeleteToken(db)).Methods("DELETE")
-	router.HandleFunc("/api/delete/tokens", endpoints.DeleteTokens(db)).Methods("DELETE")
+	router.HandleFunc("/api/delete/token", endpoints.DeleteOneToken(db)).Methods("DELETE")
+	router.HandleFunc("/api/delete/tokens", endpoints.DeleteAllTokens(db)).Methods("DELETE")
 
-	server := &http.Server{Addr: ":8000",
+	server := &http.Server{Addr: helpers.ServerPort,
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
