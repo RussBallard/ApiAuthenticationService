@@ -3,47 +3,30 @@ package main
 import (
 	"ApiAuthenticationService/database"
 	"ApiAuthenticationService/endpoints"
-	"ApiAuthenticationService/helpers"
-	"context"
+	"ApiAuthenticationService/utils"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"time"
 )
 
 func main() {
-	db := database.MongoConnection()
-	defer database.MongoCloseConnection(db)
+	mongoDB := database.BaseConnection{}
+	if err := mongoDB.InitMongoDB(); err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	defer mongoDB.MongoCloseConnection()
+	databaseConnection := endpoints.BaseConnection{DatabaseData: &mongoDB}
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/create/tokens", endpoints.CreateTokens(db)).Methods("POST")
-	router.HandleFunc("/api/update/tokens", endpoints.UpdateTokens(db)).Methods("PUT")
-	router.HandleFunc("/api/delete/token", endpoints.DeleteOneToken(db)).Methods("DELETE")
-	router.HandleFunc("/api/delete/tokens", endpoints.DeleteAllTokens(db)).Methods("DELETE")
+	router.HandleFunc("/api/create/tokens", databaseConnection.CreatePairTokens).Methods("POST")
+	router.HandleFunc("/api/update/tokens", databaseConnection.UpdatePairTokens).Methods("PUT")
+	router.HandleFunc("/api/delete/token", databaseConnection.DeleteOneToken).Methods("DELETE")
+	router.HandleFunc("/api/delete/tokens", databaseConnection.DeleteAllTokens).Methods("DELETE")
 
-	server := &http.Server{Addr: helpers.ServerPort,
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-		Handler:      router}
-
-	go func() {
-		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("ListenAndServe(): %s", err)
-		}
-	}()
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-
-	<-stop
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Shutdown(): %s", err)
+	if err := http.ListenAndServe(":"+utils.ServerPort, router); err != nil {
+		log.Fatalf("ListenAndServe(): %s", err)
 	}
 }

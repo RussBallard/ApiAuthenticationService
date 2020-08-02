@@ -1,11 +1,16 @@
 package database
 
+import (
+	"time"
+)
+
 type UserTokens struct {
-	GUID          string `bson:"_id,omitempty"`
-	IP            string `bson:"ip,omitempty"`
-	OS            string `bson:"os,omitempty"`
-	UserAgent     string `bson:"user_agent"`
-	RefreshTokens string `bson:"refresh_tokens,omitempty"`
-	CreatedAt     string `bson:"created_at, omitempty"`
-	ExpiredAt     string `bson:"expired_at"`
+	GUID          string      `json:"guid" bson:"_id,omitempty"`
+	RefreshTokens []TokenType `json:"refresh_tokens" bson:"refresh_tokens"`
+}
+
+type TokenType struct {
+	Token     string    `json:"token"`
+	CreatedAt time.Time `json:"created_at" bson:"created_at"`
+	ExpiredAt time.Time `json:"expired_at" bson:"expired_at"`
 }
