@@ -51,17 +51,24 @@ func (mongoDB *BaseConnection) MongoCloseConnection() {
 	log.Println("Connection to MongoDB closed!")
 }
 
-func (mongoDB *BaseConnection) MongoSaveObject(databaseObject UserTokens) (*mongo.InsertOneResult, error) {
+func (mongoDB *BaseConnection) FindUserDocument(guid string) (UserTokens, error) {
+	var dbResult UserTokens
+	collection := mongoDB.DB.Collection("user_tokens")
+	err := collection.FindOne(context.Background(), bson.M{"_id": guid}).Decode(&dbResult)
+	return dbResult, err
+}
+
+func (mongoDB *BaseConnection) MongoSaveDocument(databaseDocument UserTokens) (*mongo.InsertOneResult, error) {
 	collection := mongoDB.DB.Collection("user_tokens")
 
 	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultTimeout)
 	defer cancel()
 
-	collectionResult, err := collection.InsertOne(ctx, databaseObject)
+	collectionResult, err := collection.InsertOne(ctx, databaseDocument)
 	return collectionResult, err
 }
 
-func (mongoDB *BaseConnection) MongoUpdateObject(databaseObject UserTokens) (*mongo.UpdateResult, error) {
+func (mongoDB *BaseConnection) MongoUpdateDocument(databaseDocument UserTokens) (*mongo.UpdateResult, error) {
 	collection := mongoDB.DB.Collection("user_tokens")
 
 	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultTimeout)
@@ -69,9 +76,7 @@ func (mongoDB *BaseConnection) MongoUpdateObject(databaseObject UserTokens) (*mo
 
 	collectionResult, err := collection.UpdateOne(
 		ctx,
-		bson.M{"_id": databaseObject.GUID},
-		bson.D{
-			{"$set", bson.D{{"refresh_tokens", databaseObject.RefreshTokens}}},
-		})
+		bson.M{"_id": databaseDocument.GUID},
+		bson.D{{"$set", bson.D{{"refresh_tokens", databaseDocument.RefreshTokens}}}})
 	return collectionResult, err
 }

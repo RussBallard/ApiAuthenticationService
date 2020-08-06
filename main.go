@@ -23,8 +23,8 @@ func main() {
 
 	router.HandleFunc("/api/create/tokens", databaseConnection.CreatePairTokens).Methods("POST")
 	router.HandleFunc("/api/update/tokens", databaseConnection.UpdatePairTokens).Methods("PUT")
-	router.HandleFunc("/api/delete/token", databaseConnection.DeleteOneToken).Methods("DELETE")
-	router.HandleFunc("/api/delete/tokens", databaseConnection.DeleteAllTokens).Methods("DELETE")
+	router.HandleFunc("/api/delete/token", utils.DeleteMethodHeaders(databaseConnection.DeleteOneToken)).Methods("DELETE")
+	router.HandleFunc("/api/delete/tokens", utils.DeleteMethodHeaders(databaseConnection.DeleteAllTokens)).Methods("DELETE")
 
 	if err := http.ListenAndServe(":"+utils.ServerPort, router); err != nil {
 		log.Fatalf("ListenAndServe(): %s", err)

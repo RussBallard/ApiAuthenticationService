@@ -2,23 +2,29 @@ package utils
 
 import (
 	"ApiAuthenticationService/database"
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
 var (
+	tokenAPI   = "O2!DirsP%3Z@b2ZDWgtr9@a^"
 	SigningKey = []byte("my_secret_key")
 	ServerPort = "8000"
 )
 
-type UserRefreshToken struct {
+type UserToken struct {
 	GUID         string `json:"guid"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-type UserGUID struct {
+type UserGuid struct {
 	GUID string `json:"guid"`
+}
+
+type DeleteOneRefreshTokenBody struct {
+	RefreshToken string `json:"refresh_token"`
 }
 
 type Claims struct {
@@ -80,5 +86,30 @@ func (pairTokens Tokens) CreateDatabaseDocument(guid string) database.UserTokens
 			CreatedAt: pairTokens.RefreshToken.CreatedAt,
 			ExpiredAt: pairTokens.RefreshToken.ExpiresAt,
 		}},
+	}
+}
+
+func (rBody UserToken) FindEqualToken(dbResult database.UserTokens) (int, error) {
+	var isEqualToken = false
+	var refreshTokenIndex int
+	var refreshTokenData database.TokenType
+	for index, refreshToken := range dbResult.RefreshTokens {
+		err := bcrypt.CompareHashAndPassword([]byte(refreshToken.Token), []byte(rBody.RefreshToken))
+		if err == nil {
+			isEqualToken = true
+			refreshTokenIndex = index
+			refreshTokenData = refreshToken
+			break
+		}
+	}
+
+	// Если токен не найден по хэшу в бд или истек его срок действия,
+	// то возвращаем ошибку для создания 401 статуса
+	if isEqualToken == false {
+		return refreshTokenIndex, errors.New("token not found")
+	} else if refreshTokenData.ExpiredAt.Unix() < time.Now().Unix() {
+		return refreshTokenIndex, errors.New("token was expired")
+	} else {
+		return refreshTokenIndex, nil
 	}
 }
