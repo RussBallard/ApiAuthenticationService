@@ -3,10 +3,7 @@ package endpoints
 import (
 	"ApiAuthenticationService/database"
 	"ApiAuthenticationService/utils"
-	"context"
 	"encoding/json"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 )
@@ -24,23 +21,24 @@ func (mongoDB *BaseConnection) CreatePairTokens(w http.ResponseWriter, r *http.R
 	}
 
 	pairTokens := utils.GenerateJWT(rBody.GUID)
-	collection := mongoDB.DatabaseData.DB.Collection("user_tokens")
-	guid := collection.FindOne(context.Background(), bson.M{"_id": rBody.GUID})
-	// TODO: Ограничить максимальное количество токенов
-	if guid.Err() != mongo.ErrNoDocuments {
-		w.WriteHeader(http.StatusConflict)
-		return
-	}
-
 	databaseDocument := pairTokens.CreateDatabaseDocument(rBody.GUID)
-	collectionResult, err := mongoDB.DatabaseData.MongoSaveDocument(databaseDocument)
+	dbResult, err := mongoDB.DatabaseData.FindUserDocument(rBody.GUID)
+	if err != nil { // Если пользователь не найден, то создаем его данные в бд
+		_, err = mongoDB.DatabaseData.MongoSaveDocument(databaseDocument)
+	} else if len(dbResult.RefreshTokens) == 3 { // Если у пользователя уже 3 токена, то в целях защиты, удаляем их
+		dbResult.RefreshTokens = nil
+		dbResult.RefreshTokens = append(dbResult.RefreshTokens, databaseDocument.RefreshTokens[0])
+		_, err = mongoDB.DatabaseData.MongoUpdateDocument(dbResult)
+	} else { // Если у пользователя меньше 3 токенов, то добавляем новый в массив
+		dbResult.RefreshTokens = append(dbResult.RefreshTokens, databaseDocument.RefreshTokens[0])
+		_, err = mongoDB.DatabaseData.MongoUpdateDocument(dbResult)
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.Println("Inserted a single document: ", collectionResult.InsertedID)
-
+	log.Println("Single document was created or updated: ", rBody.GUID)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(pairTokens)
@@ -78,7 +76,6 @@ func (mongoDB *BaseConnection) UpdatePairTokens(w http.ResponseWriter, r *http.R
 	}
 
 	log.Println("Updated a single document: ", dbResult.GUID)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(pairTokens)
@@ -125,12 +122,6 @@ func (mongoDB BaseConnection) DeleteAllTokens(w http.ResponseWriter, r *http.Req
 
 	dbResult, err := mongoDB.DatabaseData.FindUserDocument(rBody.GUID)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	if _, err = rBody.FindEqualToken(dbResult); err != nil {
-		log.Printf("Token: %s ; Error: %s\n", err, rBody.RefreshToken)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
