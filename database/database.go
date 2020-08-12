@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	mongodbUrl          = "mongodb://127.0.0.1:27017"
+	mongodbUrl          = "mongodb://localhost:27017,localhost:27017,localhost:27017?replicaSet=rs"
 	mongoDefaultTimeout = 5 * time.Second
-	err                 error
 )
 
 type BaseConnection struct {
@@ -21,16 +20,12 @@ type BaseConnection struct {
 }
 
 func (mongoDB *BaseConnection) InitMongoDB() error {
-	mongoDB.Client, err = mongo.NewClient(options.Client().ApplyURI(mongodbUrl))
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
+	mongoDB.Client, _ = mongo.NewClient(options.Client().ApplyURI(mongodbUrl))
 	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultTimeout)
 	defer cancel()
 
-	if err = mongoDB.Client.Connect(ctx); err != nil {
+	err := mongoDB.Client.Connect(ctx)
+	if err = mongoDB.Client.Ping(ctx, nil); err != nil {
 		return err
 	}
 
@@ -44,7 +39,7 @@ func (mongoDB *BaseConnection) MongoCloseConnection() {
 	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultTimeout)
 	defer cancel()
 
-	if err = mongoDB.Client.Disconnect(ctx); err != nil {
+	if err := mongoDB.Client.Disconnect(ctx); err != nil {
 		log.Fatal(err)
 	}
 
