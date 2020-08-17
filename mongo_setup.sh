@@ -2,7 +2,7 @@
 echo "sleeping for 10 seconds"
 sleep 10
 
-echo mongo_setup.sh time now: `date +"%T" `
+echo mongo_setup.sh time now: $(date +"%T")
 mongo --host mongo1:27017 <<EOF
   var cfg = {
     "_id": "rs0",
@@ -26,4 +26,18 @@ mongo --host mongo1:27017 <<EOF
     ]
   };
   rs.initiate(cfg);
+EOF
+sleep 10
+
+mongo --host mongo1:27017 <<EOF
+   use admin;
+   admin = db.getSiblingDB("admin");
+   admin.createUser(
+     {
+	      user: "admin",
+        pwd: "password",
+        roles: [ { role: "root", db: "admin" } ]
+     });
+     db.getSiblingDB("admin").auth("admin", "password");
+     rs.status();
 EOF

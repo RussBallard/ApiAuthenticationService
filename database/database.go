@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	mongodbUrl          = "mongodb://localhost:27017,localhost:27017,localhost:27017?replicaSet=rs"
+	mongodbUrl          = "mongodb://admin:password@mongo1,mongo2,mongo3/authentication?replicaSet=rs0&authSource=admin&w=1&"
 	mongoDefaultTimeout = 5 * time.Second
 )
 
