@@ -47,7 +47,7 @@ services:
     entrypoint: [ 'bash', '/scripts/mongo_setup.sh' ]
   web:
     container_name: api_authentication_service
-    build: .
+    build: ..
     depends_on:
       - mongo1
       - mongo2
